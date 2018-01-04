@@ -18,7 +18,7 @@
     "passport-http":"*",
     "passport-local":"*",
     "mongodb":"*",
-    "mongoose":"*",
+    "mongoose":"~4.7.6",
     "express-session":"*",
     "connect-flash":"*",
     "express-messages":"*",

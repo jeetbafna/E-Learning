@@ -14,15 +14,15 @@ var mongo = require('mongodb');
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/elearn');
 var db = mongoose.connection;
+async = require('async');
 
-//Routes
-var index = require('./routes/index');
+var routes = require('./routes/index');
 var users = require('./routes/users');
 var classes = require('./routes/classes');
 
 var app = express();
 
-// view engine setup(handlebars)
+// view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.engine('handlebars', exphbs({defaultLayout:'layout'}));
 app.set('view engine', 'handlebars');
@@ -35,47 +35,50 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-//express session
+// Express Session
 app.use(session({
-	secret: 'secret',
-	saveUninitialized: true,
-	resave: true
+    secret: 'secret',
+    saveUninitialized: true,
+    resave: true
 }));
 
-//Passport
+// Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-//Validator
-app.use(expressValidator({
-	errorFormatter: function(param, msg,value){
-		var namespace = param.split('.')
-		, root = namespace.shift()
-		, formParam = root;
 
-		while(namespace.length){
-			formParam += '[' + namespace.shift() + ']';
-		}
-		return {
-			param : formParam,
-			msg : msg,
-			value : value
-		};
-	}
+// Express Validator
+app.use(expressValidator({
+  errorFormatter: function(param, msg, value) {
+      var namespace = param.split('.')
+      , root    = namespace.shift()
+      , formParam = root;
+
+    while(namespace.length) {
+      formParam += '[' + namespace.shift() + ']';
+    }
+    return {
+      param : formParam,
+      msg   : msg,
+      value : value
+    };
+  }
 }));
 
-//Connect flash
+// Connect-Flash
 app.use(flash());
 
-//Express messages
-app.use(function(req, res, next){
-	res.locals.messages = require('express-messages')(req, res);
-	next();
+// Global Vars
+app.use(function (req, res, next) {
+  res.locals.messages = require('express-messages')(req, res);
+  next();
 });
 
-app.use('/', index);
+
+app.use('/', routes);
 app.use('/users', users);
 app.use('/classes', classes);
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -84,15 +87,29 @@ app.use(function(req, res, next) {
   next(err);
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+// error handlers
 
-  // render the error page
+// development error handler
+// will print stacktrace
+if (app.get('env') === 'development') {
+  app.use(function(err, req, res, next) {
+    res.status(err.status || 500);
+    res.render('error', {
+      message: err.message,
+      error: err
+    });
+  });
+}
+
+// production error handler
+// no stacktraces leaked to user
+app.use(function(err, req, res, next) {
   res.status(err.status || 500);
-  res.render('error');
+  res.render('error', {
+    message: err.message,
+    error: {}
+  });
 });
+
 
 module.exports = app;
